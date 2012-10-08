@@ -22,15 +22,21 @@
 #pragma userControlDuration(120)
 
 #include "Vex_Competition_Includes.c"   //Main competition background code...do not modify!
+
+//Variable Declarations
+//Constants for Autonomous
 const float circumference = 12.6;
 const int encoderCounts = 360;
-
-
+//Constants for PID
 float arm_kP=.5, arm_kI=.5, arm_kD=.5;
 float drive_kP=.5, drive_kI=.5, drive_kD=.5;
+//PID error variables
 float arm_errorSum=0, arm_lastError=0;
 float drive_errorSum=0, drive_lastError=0;
 
+//Function declarations
+
+//PID Functions
 float UpdateD(float goal, float currentValue) {
   float error = goal - currentValue;
   float p = drive_kP * error;
@@ -53,11 +59,15 @@ float UpdateA(float goal, float currentValue) {
   return p + i + d;
 }
 
-
+//Autonomous and General Functions
 int distanceToCounts(float distance)
 {
 		int counts = distance / circumference * encoderCounts;
 		return counts;
+}
+void clearEncoders()
+{
+
 }
 void motorUnity (int group, int power)
 {
@@ -87,14 +97,26 @@ void motorUnity (int group, int power)
 				break;
 		}
 }
-
+void holdArm()
+{
+}
+void autoFunctions()
+{
+  //Insert autonomous routine
+}
 void basicDriver()
 {
+    //Basic Driver + Operator controls
     motorUnity (0,vexRT[Ch3]); //Left
 		motorUnity (1,vexRT[Ch2]); //Right
 	 	motorUnity (2,vexRT[Ch3Xmtr2]); //Arm
 	  motorUnity (3,vexRT[Ch2Xmtr2]); //Rollers
 }
+void pidDrive()
+{
+  //Insert controls for driver & operator control with PID
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 //                          Pre-Autonomous Functions
@@ -109,6 +131,7 @@ void pre_auton()
   // Set bStopTasksBetweenModes to false if you want to keep user created tasks running between
   // Autonomous and Tele-Op modes. You will need to manage all user created tasks if set to false.
   bStopTasksBetweenModes = true;
+  clearEncoders();
 
 	// All activities that occur before the competition starts
 	// Example: clearing encoders, setting servo positions, ...
