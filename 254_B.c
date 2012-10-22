@@ -111,6 +111,12 @@ void autoFunctions()
 {
   //Insert autonomous routine
 }
+void basicAuto()
+{
+  motorUnity(3, -127);
+  wait10Msec(100);
+  motorUnity(3, 0);
+}
 void basicDriver()
 {
     //Basic Driver + Operator controls
