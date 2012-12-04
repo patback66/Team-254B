@@ -1,5 +1,7 @@
 #pragma config(I2C_Usage, I2C1, i2cSensors)
 #pragma config(Sensor, dgtl1,  armEncoder,     sensorQuadEncoder)
+#pragma config(Sensor, dgtl3,  side,           sensorTouch)
+#pragma config(Sensor, dgtl4,  button,         sensorTouch)
 #pragma config(Sensor, I2C_1,  leftEncoder,    sensorQuadEncoderOnI2CPort,    , AutoAssign)
 #pragma config(Sensor, I2C_2,  rightEncoder,   sensorQuadEncoderOnI2CPort,    , AutoAssign)
 #pragma config(Motor,  port1,           bLeft,         tmotorVex393, openLoop, encoder, encoderPort, I2C_1, 1000)
@@ -28,10 +30,11 @@
 //Constants for Autonomous
 const float circumference = 12.6;
 const int encoderCounts = 360;
-const int integratedEncoderCounts = 392;
+const int integratedEncoderCounts = 627.2; //392;
 //Constants for PID
-float arm_kP=.5, arm_kI=.5, arm_kD=.5;
-float drive_kP=.5, drive_kI=.5, drive_kD=.5;
+//.5, .5, .5
+float arm_kP=0.05, arm_kI=0.05, arm_kD=0.05;
+float drive_kP=0.05, drive_kI=0.05, drive_kD=0.05;
 //PID error variables
 float arm_errorSum=0, arm_lastError=0;
 float drive_errorSum=0, drive_lastError=0;
@@ -51,6 +54,8 @@ float UpdateD(float goal, float currentValue) {//driver pid
 }
 
 void resetDrivePID () {
+  nMotorEncoder[bLeft] = 0;
+  nMotorEncoder[bRight] = 0;
   drive_errorSum = 0;
   drive_lastError = 0;
 }
@@ -78,6 +83,15 @@ int distanceToCounts(float distance, int i)
 		  return counts;
 	  }
 }
+float leftdistance()
+{
+	return nMotorEncoder[bLeft] / (encoderCounts) * (4*PI);
+}
+float rightdistance()
+{
+	return nMotorEncoder[bRight] / (encoderCounts) * (4*PI);
+}
+
 void clearEncoders()
 {
 
@@ -92,12 +106,12 @@ void motorUnity (int group, int power)
 		switch(group)
 		{
 			case 0: //Left Drive
-			  resetDrivePID();
+			  //resetDrivePID();
 				motor[fLeft] = power;
 				motor[bLeft] = power;
 				break;
 			case 1: //Right Drive
-			  resetDrivePID();
+			  //resetDrivePID();
 				motor[fRight] = power;
 				motor[bRight] = power;
 				break;
@@ -114,19 +128,84 @@ void motorUnity (int group, int power)
 			  motor[strafeRight] = power;
 			  //strafing motor
 			  break;
-
+      case 5:
+        if(sensorValue[armEncoder] + 253 > 10)
+        {
+          motor[aLeft] = 127;
+          motor[aRight] = 127;
+        }
+        else if (SensorValue[armEncoder] + 253 > 0)
+        {
+          motor[aLeft] = 20;
+          motor[aRight] = 20;
+        }
+        else if (SensorValue[armEncoder] + 253 < -25)
+        {
+          motor[aLeft] = -45;
+          motor[aRight] = -45;
+        }
+        else if (SensorValue[armEncoder] + 253 < 0)
+        {
+          motor[aLeft] = -20;
+          motor[aRight] = -20;
+        }
+        else
+        {
+          motor[aLeft] = 0;
+          motor[aRight] = 0;
+        }
+        break;
 		}
 		//robwashere :)
 }
 void pidForward(int powR, int powL) {
-   float mod = updateD( nMotorEncoder[rightEncoder], nMotorEncoder[leftEncoder]);
-   powR = powR - (5 * mod / integratedEncoderCounts);
+   float rightEncode = nMotorEncoder[bRight], leftEncode = nMotorEncoder[bLeft];
+   float mod = updateD( rightEncode, leftEncode);
+   powL = powL + (5 * mod / integratedEncoderCounts);
+   //powL = powL - (5 * mod / integratedEncoderCounts);
+   powL = powL % 127;
+   powR = powR % 127;
    motor[fLeft] = powL;
 	 motor[bLeft] = powL;
 	 motor[fRight] = powR;
 	 motor[bRight] = powR;
 
 }
+float dist;
+void straightDrive(float inches, int speed)
+{
+  nMotorEncoder[bLeft] = 0;
+  nMotorEncoder[bRight] = 0;
+	while(true)
+	{
+		dist=abs(rightdistance());
+	  if (inches>0){
+			if (dist<inches){
+			  pidForward(speed, speed);
+				//motorUnity(0, speed);
+				//motorUnity(1, speed);
+			}
+	   	else{
+	  		motorUnity(0, 0);
+	  		motorUnity(1, 0);
+	 			break;
+	 		}
+	 	}
+	 	if (inches < 0){
+			if (dist<inches){
+			  pidForward(-speed, -speed);
+			  //motorUnity(1, -speed);
+			 // motorUnity(0, -speed);
+			}
+	   	else{
+	   	  motorUnity(0, 0);
+	   	  motorUnity(1, 0);
+	 			break;
+	 		}
+	  }
+	}
+}
+
 void holdArm()
 {
 }
@@ -140,6 +219,258 @@ void basicAuto()
   wait10Msec(300);
   motorUnity(3, 0);
 }
+void slightlyMoreAdvancedAuto()
+{
+  motorUnity(3, 127);
+  wait10Msec(100);
+  motorUnity(3,0);
+  straightDrive(1, 127);
+}
+void scoringAuto()
+{
+  nMotorEncoder[bLeft] = 0;
+  nMotorEncoder[bRight] = 0;
+  motorUnity(3, 127);
+  if(SensorValue[side] == 1)//right
+  {
+    while(nMotorEncoder[bRight] < distanceToCounts(38,1))
+    {
+      motorUnity(0,120);
+      motorUnity(1,127);
+      if(nMotorEncoder[bRight] > distanceToCounts(14,1))
+      {
+        motorUnity(3, -127);
+        motorUnity(0, 90);
+        motorUnity(1, 90);
+      }
+    }
+    motorUnity(0, 0);
+    motorUnity(1, 0);
+    nMotorEncoder[bLeft] = 0;
+    nMotorEncoder[bRight] = 0;
+    while(SensorValue[armEncoder] > -230)
+    {
+      motorUnity(5, 100);
+    }
+    motorUnity(2, 0);
+    while(nMotorEncoder[bLeft] < distanceToCounts(13, 1))
+    {
+      motorUnity(0, 127);
+      motorUnity(1, 11);
+    }
+    motorUnity(0, 0);
+    motorUnity(2, 0);
+    nMotorEncoder[bLeft] = 0;
+    nMotorEncoder[bRight] = 0;
+
+    while(nMotorEncoder[bRight] < distanceToCounts(7, 1))
+    {
+      motorUnity(0, 35);
+      motorUnity(1, 35);
+    }
+    motorUnity(2, -40);
+    motorUnity(0, 0);
+    motorUnity(1, 0);
+    motorUnity(3, 127);
+    motorUnity(2, 0);
+    wait10Msec(300);
+    motorUnity(3, 0);
+  }
+  else if(SensorValue[side] == 0)//left
+  {
+    while(nMotorEncoder[bRight] < distanceToCounts(34,1))
+    {
+      motorUnity(0,127);
+      motorUnity(1,80);
+      if(nMotorEncoder[bRight] > distanceToCounts(14,1))
+         motorUnity(3, -127);
+    }
+    motorUnity(0, 0);
+    motorUnity(1, 0);
+    nMotorEncoder[bLeft] = 0;
+    nMotorEncoder[bRight] = 0;
+    while(SensorValue[armEncoder] > -218)
+    {
+      motorUnity(5, 127);
+    }
+    motorUnity(2, 0);
+    while(nMotorEncoder[bRight] < distanceToCounts(7, 1))
+    {
+      motorUnity(0, 11);
+      motorUnity(1, 127);
+    }
+    motorUnity(0, 0);
+    motorUnity(3, 0);
+    nMotorEncoder[bLeft] = 0;
+    nMotorEncoder[bRight] = 0;
+
+    while(nMotorEncoder[bRight] < distanceToCounts(7, 1))
+    {
+      motorUnity(0, 30);
+      motorUnity(1, 30);
+    }
+    motorUnity(2, -40);
+    motorUnity(0, 0);
+    motorUnity(1, 0);
+    motorUnity(3, 127);
+    motorUnity(2, 0);
+    wait10Msec(300);
+    motorUnity(3, 0);
+  }
+}
+void programmingSkills()
+{
+  nMotorEncoder[bRight] = 0;
+  nMotorEncoder[bLeft] = 0;
+  SensorValue[armEncoder] = 0;
+
+  //Step 1, to trough and score, return
+  while(nMotorEncoder[bRight] < distanceToCounts(30, 1))
+  {
+     motorUnity(1, 127);
+     motorUnity(0, 127);
+  }
+  motorUnity(0, 0);
+  motorUnity(0, 0);
+  while(SensorValue[armEncoder] > -218)
+  {
+    motorUnity(5, 127);
+  }
+   motorUnity(2, 0);
+   nMotorEncoder[bRight] = 0;
+   nMotorEncoder[bLeft] = 0;
+   while(nMotorEncoder[bright] < distanceToCounts(10, 1);
+   {
+     motorUnity(0, 100);
+     motorUnity(1, 100);
+   }
+   motorUnity(0, 0);
+   motorUnity(0, 0);
+   motorUnity(3, 127);
+   wait10Msec(300);
+   motorUnity(3, 0);
+   nMotorEncoder[bLeft] = 0;
+   nMotorEncoder[bRight] = 0;
+
+   while( nMotorEncoder[bRight] > -distanceToCounts(40, 1))
+   {
+     motorUnity(0, -127);
+     while(SensorValue[armEncoder] < 0)
+     {
+        motorUnity(2, -127);
+     }
+     motorUnity(2, 0);
+   }
+   //reposition, wait for button push
+   //Step 2
+   while(!SensorValue[button])
+   {}
+   wait1Msec(50);
+   nMotorEncoder[bLeft] = 0;
+   nMotorEncoder[bRight] = 0;
+   SensorValue[armEncoder] = 0;
+   motorUnity(3, 127);
+   while(nMotorEncoder[bRight] < distanceToCounts(12, 1)
+   {
+      motorUnity(0, 127);
+      motorUnity(1, 127);
+   }
+   nMotorEncoder[bLeft] = 0;
+   nMotorEncoder[bRight] = 0;
+   while(nMotorEncoder[bRight] < distanceToCounts(8,1)
+   {
+      motorUnity(0, 40);
+      motorUnity(1, 40);
+   }
+   motorUnity(3, 0);
+   nMotorEncoder[bLeft] = 0;
+   nMotorEncoder[bRight] = 0;
+   while(nMotorEncoder[bLeft] < distanceToCounts(8, 1)
+   {
+     motorUnity(0, 100);
+     motorUnity(1, 15);
+   }
+   motorUnity(0, 0);
+   motorUnity(1, 0);
+   nMotorEncoder[bLeft] = 0;
+   nMotorEncoder[bRight] = 0;
+   while(SensorValue[armEncoder] > -218)
+   {
+     motorUnity(5, 127);
+   }
+   while(nMotorEncoder[bright] < distanceToCounts(15, 1);
+   {
+     motorUnity(0, 100);
+     motorUnity(1, 100);
+   }
+   motorUnity(0, 0);
+   motorUnity(1, 0);
+   nMotorEncoder[bLeft] = 0;
+   nMotorEncoder[bRight] = 0;
+   motorUnity(3, -127);
+   wait10Msec(300);
+   motorUnity(3, 0);
+   while(nMotorEncoder[bRight] > -distanceToCounts(40, 1);
+   {
+     motorUnity(0, -127);
+     motorUnity(1, -100);
+     while(SensorValue[armEncoder] < 0)
+     {
+        motorUnity(2, -127);
+     }
+     motorUnity(2, 0);
+   }
+   while(!SensorValue[button])
+   {}
+   wait1Msec(10);
+   while(nMotorEncoder[bRight] < distanceToCounts(38,1))
+    {
+      motorUnity(0,120);
+      motorUnity(1,127);
+      if(nMotorEncoder[bRight] > distanceToCounts(14,1))
+      {
+        motorUnity(3, -127);
+        motorUnity(0, 90);
+        motorUnity(1, 90);
+      }
+    }
+    motorUnity(0, 0);
+    motorUnity(1, 0);
+    nMotorEncoder[bLeft] = 0;
+    nMotorEncoder[bRight] = 0;
+    while(SensorValue[armEncoder] > -230)
+    {
+      motorUnity(5, 100);
+    }
+    motorUnity(2, 0);
+    while(nMotorEncoder[bLeft] < distanceToCounts(13, 1))
+    {
+      motorUnity(0, 127);
+      motorUnity(1, 11);
+    }
+    motorUnity(0, 0);
+    motorUnity(2, 0);
+    nMotorEncoder[bLeft] = 0;
+    nMotorEncoder[bRight] = 0;
+
+    while(nMotorEncoder[bRight] < distanceToCounts(7, 1))
+    {
+      motorUnity(0, 35);
+      motorUnity(1, 35);
+    }
+    motorUnity(2, -40);
+    motorUnity(0, 0);
+    motorUnity(1, 0);
+    motorUnity(3, 127);
+    motorUnity(2, 0);
+    wait10Msec(300);
+    motorUnity(3, 0);
+  }
+
+
+
+
+}
 void basicDriver()
 {
 
@@ -148,6 +479,7 @@ void basicDriver()
 		motorUnity (1,vexRT[Ch2]); //Right
 
 	  motorUnity (3,vexRT[Ch2Xmtr2]); //Rollers
+
 	  if(vexRT[Btn6U])
 	  {
 	     motorUnity(4, 127);
@@ -167,18 +499,25 @@ void basicDriver()
 	  {
 	     motorUnity(2, 20);
 	  }
+	  else if(vexRT[Btn7DXmtr2])//arm upright
+	  {
+	      motorUnity(5,127);
+	  }
 	  else
 	  {
       motorUnity (2,vexRT[Ch3Xmtr2]); //Arm
 	  }
+
 }
 void pidDrive()
 {
     if(abs(vexRT[Ch2]) > 10 && abs(vexRT[Ch3]) > 10 && abs(vexRT[Ch2]-vexRT[Ch3]) < 3 )
-      pidForward (vexRT[Ch2], vexRT[Ch2]);
+      pidForward (vexRT[Ch2], vexRT[Ch3]);
     //Basic Driver + Operator controls
-    motorUnity (0,vexRT[Ch3]); //Left
-		motorUnity (1,vexRT[Ch2]); //Right
+    else {
+      motorUnity (0,vexRT[Ch3]); //Left
+		  motorUnity (1,vexRT[Ch2]); //Right
+		}
 
 	  motorUnity (3,vexRT[Ch2Xmtr2]); //Rollers
 	  if(vexRT[Btn6U])
@@ -241,7 +580,9 @@ task autonomous()
   // .....................................................................................
   // Insert user code here.
   // .....................................................................................
-  basicAuto();
+  //basicAuto();
+  scoringAuto();
+  //motorUnity(3, 127);
 	//AutonomousCodePlaceholderForTesting();  // Remove this function call once you have "real" code.
 }
 
@@ -260,17 +601,22 @@ task usercontrol()
 
 	while (true)
 	{
-	  //basicDriver();
-	  pidDrive();
-
-	  // This is the main execution loop for the user control program. Each time through the loop
-	  // your program should update motor + servo values based on feedback from the joysticks.
-
-	  // .....................................................................................
-	  // Insert user code here. This is where you use the joystick values to update your motors, etc.
-	  // .....................................................................................
-
-	 	//UserControlCodePlaceholderForTesting(); // Remove this function call once you have "real" code.
-
+	  basicDriver();
+	  //pidDrive();
 	}
 }
+
+//000000000000000000000000000000000000
+//00000000   0000000000000   000000000
+//0000000     00000000000     00000000
+//00000000   0000000000000   000000000
+//000000000000000000000000000000000000
+//000000000000000000000000000000000000
+//000 0000000000000000000000000000 000
+//000  00000000000000000000000000  000
+//0000  000000000000000000000000  0000
+//00000  000000000000000000000  000000
+//00000000  000000000000000  000000000
+//0000000000     000000    00000000000
+//0000000000000         00000000000000
+//000000000000000000000000000000000000
