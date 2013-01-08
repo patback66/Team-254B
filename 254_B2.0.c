@@ -129,7 +129,7 @@ void motorUnity (int group, int power)
 			  //strafing motor
 			  break;
       case 5:
-        if(sensorValue[armEncoder] + 253 > 10)
+        if(SensorValue[armEncoder] + 253 > 10)
         {
           motor[aLeft] = 127;
           motor[aRight] = 127;
@@ -160,7 +160,7 @@ void motorUnity (int group, int power)
 }
 void pidForward(int powR, int powL) {
    float rightEncode = nMotorEncoder[bRight], leftEncode = nMotorEncoder[bLeft];
-   float mod = updateD( rightEncode, leftEncode);
+   float mod = UpdateD( rightEncode, leftEncode);
    powL = powL + (5 * mod / integratedEncoderCounts);
    //powL = powL - (5 * mod / integratedEncoderCounts);
    powL = powL % 127;
@@ -248,9 +248,9 @@ void scoringAuto()
     motorUnity(1, 0);
     nMotorEncoder[bLeft] = 0;
     nMotorEncoder[bRight] = 0;
-    while(SensorValue[armEncoder] > -230)
+    while(SensorValue[armEncoder] > -220)
     {
-      motorUnity(5, 100);
+      motorUnity(5, 127);
     }
     motorUnity(2, 0);
     while(nMotorEncoder[bLeft] < distanceToCounts(13, 1))
@@ -268,11 +268,9 @@ void scoringAuto()
       motorUnity(0, 35);
       motorUnity(1, 35);
     }
-    motorUnity(2, -40);
     motorUnity(0, 0);
     motorUnity(1, 0);
     motorUnity(3, 127);
-    motorUnity(2, 0);
     wait10Msec(300);
     motorUnity(3, 0);
   }
@@ -318,6 +316,34 @@ void scoringAuto()
     motorUnity(3, 0);
   }
 }
+void wubble()
+{
+  nMotorEncoder[bRight] = 0;
+  nMotorEncoder[bLeft] = 0;
+  while(nMotorEncoder[bRight] < distanceToCounts(7, 1))
+  {
+    motorUnity(0, -80);
+    motorUnity(1, 80);
+  }
+  nMotorEncoder[bRight] = 0;
+  nMotorEncoder[bLeft] = 0;
+  while(nMotorEncoder[bLeft] < distanceToCounts(7, 1))
+  {
+    motorUnity(0, 80);
+    motorUnity(1, -80);
+  }
+  nMotorEncoder[bLeft] = 0;
+  nMotorEncoder[bRight] = 0;
+  motorUnity(0, 0);
+  motorUnity(1, 0);
+  while(nMotorEncoder[bRight] < distanceToCounts(2, 1))
+  {
+      motorUnity(0, 80);
+      motorUnity(1, 80);
+  }
+  nMotorEncoder[bLeft] = 0;
+  nMotorEncoder[bRight] = 0;
+}
 void programmingSkills()
 {
   nMotorEncoder[bRight] = 0;
@@ -325,105 +351,175 @@ void programmingSkills()
   SensorValue[armEncoder] = 0;
 
   //Step 1, to trough and score, return
-  while(nMotorEncoder[bRight] < distanceToCounts(30, 1))
+  motorUnity(3, 127);
+  wait10Msec(30);
+  motorUnity(3, 0);
+  while(nMotorEncoder[bRight] < distanceToCounts(20, 1))
   {
-     motorUnity(1, 127);
+     motorUnity(1, 120);
      motorUnity(0, 127);
   }
   motorUnity(0, 0);
-  motorUnity(0, 0);
-  while(SensorValue[armEncoder] > -218)
+  motorUnity(1, 0);
+  while(SensorValue[armEncoder] > -225)
   {
-    motorUnity(5, 127);
+    motorUnity(5, 120);
   }
    motorUnity(2, 0);
    nMotorEncoder[bRight] = 0;
    nMotorEncoder[bLeft] = 0;
-   while(nMotorEncoder[bright] < distanceToCounts(10, 1);
+   while(nMotorEncoder[bRight] < distanceToCounts(25, 1))
    {
-     motorUnity(0, 100);
-     motorUnity(1, 100);
+     motorUnity(0, 90);
+     motorUnity(1, 90);
    }
    motorUnity(0, 0);
-   motorUnity(0, 0);
+   motorUnity(1, 0);
+   motorUnity(2, 11);
    motorUnity(3, 127);
    wait10Msec(300);
    motorUnity(3, 0);
    nMotorEncoder[bLeft] = 0;
    nMotorEncoder[bRight] = 0;
-
-   while( nMotorEncoder[bRight] > -distanceToCounts(40, 1))
+   while(nMotorEncoder[bRight] > -distanceToCounts(15, 1))
    {
      motorUnity(0, -127);
-     while(SensorValue[armEncoder] < 0)
+     motorUnity(1, -127);
+     if(nMotorEncoder[bRight] < -400)
      {
-        motorUnity(2, -127);
+      while(SensorValue[armEncoder] < 0)
+      {
+          motorUnity(2, -127);
+      }
      }
      motorUnity(2, 0);
    }
+   motorUnity(0, 0);
+   motorUnity(1, 0);
+   nMotorEncoder[bRight] = 0;
+   nMotorEncoder[bLeft] = 0;
+   SensorValue[armEncoder] = 0;
+   /*
+   motorUnity(3, -127);
+   while(nMotorEncoder[bRight] < distanceToCounts(20, 1))
+   {
+     motorUnity(0, 127);
+     motorUnity(1, 127);
+   }
+   motorUnity(0, 0);
+   motorUnity(1, 0);
+   wait10Msec(100);
+   nMotorEncoder[bRight] = 0;
+   nMotorEncoder[bLeft] = 0;
+   while(nMotorEncoder[bRight] > -distanceToCounts(8, 1))
+   {
+     motorUnity(0, -127);
+     motorUnity(1, -127);
+   }
+   motorUnity(0, 0);
+   motorUnity(1, 0);
+   nMotorEncoder[bRight] = 0;
+   nMotorEncoder[bLeft] = 0;
+   while(SensorValue[armEncoder] > -218)
+   {
+     motorUnity(5, 127);
+   }
+   motorUnity(5, 0);
+   while(nMotorEncoder[bRight] < distanceToCounts(12, 1))
+   {
+     motorUnity(0, 127);
+     motorUnity(1, 127);
+   }
+   motorUnity(0, 0);
+   motorUnity(1, 0);
+   nMotorEncoder[bRight] = 0;
+   nMotorEncoder[bLeft] = 0;
+   motorUnity(3, -127);
+   wait10Msec(200);
+   motorUnity(3, 0);
+   while( nMotorEncoder[bRight] > -distanceToCounts(40, 1))
+   {
+     motorUnity(0, -127);
+     motorUnity(1, -127);
+     if(nMotorEncoder[bRight] < - 500)
+     {
+       while(SensorValue[armEncoder] < 0)
+      {
+          motorUnity(2, -127);
+      }
+     }
+     motorUnity(2, 0);
+   }
+   motorUnity(0, 0);
+   motorUnity(1, 0);
+   */
    //reposition, wait for button push
    //Step 2
+   /*
    while(!SensorValue[button])
    {}
    wait1Msec(50);
    nMotorEncoder[bLeft] = 0;
    nMotorEncoder[bRight] = 0;
    SensorValue[armEncoder] = 0;
-   motorUnity(3, 127);
-   while(nMotorEncoder[bRight] < distanceToCounts(12, 1)
+   motorUnity(3, -127);
+   while(nMotorEncoder[bRight] < distanceToCounts(21, 1))
    {
       motorUnity(0, 127);
-      motorUnity(1, 127);
+      motorUnity(1, 120);
    }
    nMotorEncoder[bLeft] = 0;
    nMotorEncoder[bRight] = 0;
-   while(nMotorEncoder[bRight] < distanceToCounts(8,1)
-   {
-      motorUnity(0, 40);
-      motorUnity(1, 40);
-   }
-   motorUnity(3, 0);
+   for(int i = 0; i < 5; i++)
+     wubble();
    nMotorEncoder[bLeft] = 0;
    nMotorEncoder[bRight] = 0;
-   while(nMotorEncoder[bLeft] < distanceToCounts(8, 1)
+   SensorValue[armEncoder] = 0;
+   while(nMotorEncoder[bRight] > -distanceToCounts(10, 1))
    {
-     motorUnity(0, 100);
-     motorUnity(1, 15);
+     motorUnity(0, -127);
+     motorUnity(1, -127);
    }
-   motorUnity(0, 0);
+   motorUnity(0,0);
    motorUnity(1, 0);
-   nMotorEncoder[bLeft] = 0;
-   nMotorEncoder[bRight] = 0;
    while(SensorValue[armEncoder] > -218)
    {
      motorUnity(5, 127);
    }
-   while(nMotorEncoder[bright] < distanceToCounts(15, 1);
+   motorUnity(2, 11);
+   nMotorEncoder[bLeft] = 0;
+   nMotorEncoder[bRight] = 0;
+
+   while(nMotorEncoder[bRight] < distanceToCounts(30,1))
    {
-     motorUnity(0, 100);
-     motorUnity(1, 100);
+     motorUnity(0,120);
+     motorUnity(1,127);
    }
    motorUnity(0, 0);
    motorUnity(1, 0);
    nMotorEncoder[bLeft] = 0;
    nMotorEncoder[bRight] = 0;
-   motorUnity(3, -127);
+   motorUnity(3, 127);
    wait10Msec(300);
    motorUnity(3, 0);
-   while(nMotorEncoder[bRight] > -distanceToCounts(40, 1);
+   while(nMotorEncoder[bRight] > -distanceToCounts(40, 1))
    {
      motorUnity(0, -127);
-     motorUnity(1, -100);
-     while(SensorValue[armEncoder] < 0)
-     {
-        motorUnity(2, -127);
-     }
+     motorUnity(1, -127);
+     while(SensorValue[armEncoder] > 0 && nMotorEncoder[bRight] > - 600)
+       motorUnity(2, -127);
      motorUnity(2, 0);
    }
+   motorUnity(0, 0);
+   motorUnity(1, 0);
+   */
+   //Stage 3: get high goal
    while(!SensorValue[button])
    {}
    wait1Msec(10);
-   while(nMotorEncoder[bRight] < distanceToCounts(38,1))
+   nMotorEncoder[bRight] = 0;
+   nMotorEncoder[bLeft] = 0;
+   while(nMotorEncoder[bRight] < distanceToCounts(39,1))
     {
       motorUnity(0,120);
       motorUnity(1,127);
@@ -436,14 +532,15 @@ void programmingSkills()
     }
     motorUnity(0, 0);
     motorUnity(1, 0);
+    wait10Msec(80);
     nMotorEncoder[bLeft] = 0;
     nMotorEncoder[bRight] = 0;
-    while(SensorValue[armEncoder] > -230)
+    while(SensorValue[armEncoder] > -218)
     {
       motorUnity(5, 100);
     }
     motorUnity(2, 0);
-    while(nMotorEncoder[bLeft] < distanceToCounts(13, 1))
+    while(nMotorEncoder[bLeft] < distanceToCounts(10, 1))
     {
       motorUnity(0, 127);
       motorUnity(1, 11);
@@ -453,7 +550,7 @@ void programmingSkills()
     nMotorEncoder[bLeft] = 0;
     nMotorEncoder[bRight] = 0;
 
-    while(nMotorEncoder[bRight] < distanceToCounts(7, 1))
+    while(nMotorEncoder[bRight] < distanceToCounts(15, 1))
     {
       motorUnity(0, 35);
       motorUnity(1, 35);
@@ -465,12 +562,13 @@ void programmingSkills()
     motorUnity(2, 0);
     wait10Msec(300);
     motorUnity(3, 0);
-  }
-
-
-
-
 }
+
+
+
+
+
+
 void basicDriver()
 {
 
@@ -580,8 +678,11 @@ task autonomous()
   // .....................................................................................
   // Insert user code here.
   // .....................................................................................
+
+  //motorUnity(3, 127);
   //basicAuto();
-  scoringAuto();
+  //scoringAuto();
+  programmingSkills();
   //motorUnity(3, 127);
 	//AutonomousCodePlaceholderForTesting();  // Remove this function call once you have "real" code.
 }
@@ -605,18 +706,3 @@ task usercontrol()
 	  //pidDrive();
 	}
 }
-
-//000000000000000000000000000000000000
-//00000000   0000000000000   000000000
-//0000000     00000000000     00000000
-//00000000   0000000000000   000000000
-//000000000000000000000000000000000000
-//000000000000000000000000000000000000
-//000 0000000000000000000000000000 000
-//000  00000000000000000000000000  000
-//0000  000000000000000000000000  0000
-//00000  000000000000000000000  000000
-//00000000  000000000000000  000000000
-//0000000000     000000    00000000000
-//0000000000000         00000000000000
-//000000000000000000000000000000000000
